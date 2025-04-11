@@ -2,9 +2,11 @@ package com.smu.hotelres.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.smu.hotelres.R
 import com.smu.hotelres.databinding.ItemHotelBinding
 import com.smu.hotelres.model.Hotel
 import java.text.SimpleDateFormat
@@ -42,9 +44,15 @@ class HotelAdapter(
 
         fun bind(hotel: Hotel) {
             binding.apply {
+                // Set hotel name and rating
                 hotelNameTextView.text = hotel.name
-                priceTextView.text = "$${hotel.price}/night"
                 ratingTextView.text = hotel.rating.toString()
+                
+                // Format price
+                priceTextView.text = "$${hotel.price}/night"
+                
+                // Set hotel image (placeholder for now)
+                // In a real app, you would load an image from a URL using Glide or similar
                 
                 // Display availability and available until date if available
                 val availabilityText = if (hotel.available) {
@@ -56,6 +64,15 @@ class HotelAdapter(
                     "Not Available"
                 }
                 availabilityTextView.text = availabilityText
+                
+                // Set availability chip
+                availabilityChip.text = if (hotel.available) "Available" else "Unavailable"
+                val chipColor = if (hotel.available) {
+                    ContextCompat.getColor(root.context, R.color.accent)
+                } else {
+                    ContextCompat.getColor(root.context, R.color.text_secondary)
+                }
+                availabilityChip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(chipColor)
                 
                 // Set card selection state
                 root.isSelected = hotel.available

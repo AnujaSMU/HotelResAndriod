@@ -17,6 +17,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Set custom toolbar with app branding
+        binding.toolbar.title = getString(R.string.app_name)
+        binding.toolbar.setTitleTextAppearance(this, R.style.AppTheme_Toolbar_Title)
         setSupportActionBar(binding.toolbar)
 
         val navHostFragment = supportFragmentManager

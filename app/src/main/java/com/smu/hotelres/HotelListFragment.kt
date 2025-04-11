@@ -49,7 +49,12 @@ class HotelListFragment : Fragment() {
         // Setup RecyclerView
         adapter = HotelAdapter { hotel ->
             selectedHotel = hotel
-            binding.nextButton.isEnabled = hotel.available
+            if (hotel.available) {
+                showContinueButton(true)
+            } else {
+                Toast.makeText(context, "Sorry, this hotel is not available for booking", Toast.LENGTH_SHORT).show()
+                showContinueButton(false)
+            }
             Log.d(TAG, "Selected hotel: ${hotel.name}, ID: ${hotel.id}, Available: ${hotel.available}")
         }
 
@@ -58,8 +63,8 @@ class HotelListFragment : Fragment() {
             this.adapter = this@HotelListFragment.adapter
         }
 
-        // Initially disable next button
-        binding.nextButton.isEnabled = false
+        // Initially hide next button
+        showContinueButton(false)
 
         // Setup next button
         binding.nextButton.setOnClickListener {
@@ -82,6 +87,10 @@ class HotelListFragment : Fragment() {
         // Fetch hotels from the API using our repository
         Log.d(TAG, "Fetching hotels for dates: $checkInDate to $checkOutDate")
         fetchHotels(checkInDate, checkOutDate)
+    }
+
+    private fun showContinueButton(show: Boolean) {
+        binding.nextButton.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun fetchHotels(checkInDate: String, checkOutDate: String) {
