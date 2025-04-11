@@ -8,7 +8,6 @@ import com.smu.hotelres.model.Reservation
 import com.smu.hotelres.model.ReservationRequest
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
@@ -47,7 +46,7 @@ class HotelRepository {
             hotel_name = hotel.name,
             checkin = checkinDate,
             checkout = checkoutDate,
-            guests = guests
+            guests_list = guests
         )
 
         try {
@@ -55,9 +54,19 @@ class HotelRepository {
             val response = apiService.createReservation(request)
             
             if (response.isSuccessful) {
-                val reservation = response.body()
-                Log.d(TAG, "API call successful: ${response.code()} - Reservation: ${reservation?.confirmation_number}")
-                return reservation
+                val reservationResponse = response.body()
+                Log.d(TAG, "API call successful: ${response.code()} - Reservation: ${reservationResponse?.confirmation_number}")
+                
+                if (reservationResponse != null) {
+                    // Create a full Reservation object with the confirmation number and request data
+                    return constructReservationFromResponse(
+                        confirmationNumber = reservationResponse.confirmation_number,
+                        hotelName = hotel.name,
+                        checkinDate = checkinDate,
+                        checkoutDate = checkoutDate,
+                        guests = guests
+                    )
+                }
             } else {
                 Log.e(TAG, "API call failed with code: ${response.code()}, message: ${response.message()}")
             }
@@ -71,15 +80,13 @@ class HotelRepository {
         return createMockReservation(hotel, checkinDate, checkoutDate, guests)
     }
 
-    private fun createMockReservation(
-        hotel: Hotel,
+    private fun constructReservationFromResponse(
+        confirmationNumber: String,
+        hotelName: String,
         checkinDate: String,
         checkoutDate: String,
         guests: List<Guest>
     ): Reservation {
-        // Generate a random confirmation number
-        val confirmationNumber = "RES-" + UUID.randomUUID().toString().substring(0, 8).uppercase()
-        
         // Parse the dates
         val checkin = try {
             dateFormat.parse(checkinDate)
@@ -97,9 +104,27 @@ class HotelRepository {
         
         return Reservation(
             confirmation_number = confirmationNumber,
-            hotel_name = hotel.name,
+            hotel_name = hotelName,
             checkin = checkin,
             checkout = checkout,
+            guests_list = guests
+        )
+    }
+
+    private fun createMockReservation(
+        hotel: Hotel,
+        checkinDate: String,
+        checkoutDate: String,
+        guests: List<Guest>
+    ): Reservation {
+        // Generate a random confirmation number
+        val confirmationNumber = "RES-" + UUID.randomUUID().toString().substring(0, 8).uppercase()
+        
+        return constructReservationFromResponse(
+            confirmationNumber = confirmationNumber,
+            hotelName = hotel.name,
+            checkinDate = checkinDate,
+            checkoutDate = checkoutDate,
             guests = guests
         )
     }

@@ -141,12 +141,25 @@ class ReservationFragment : Fragment() {
                 binding.progressBar.visibility = View.GONE
 
                 if (reservation != null) {
-                    Log.d(TAG, "Reservation successful with confirmation: ${reservation.confirmation_number}")
-                    
-                    // Navigate to confirmation screen
-                    val action = ReservationFragmentDirections
-                        .actionReservationFragmentToConfirmationFragment(reservation)
-                    findNavController().navigate(action)
+                    // Verify all fields are present in the reservation object
+                    if (reservation.confirmation_number.isNotEmpty() && 
+                        reservation.hotel_name.isNotEmpty() && 
+                        reservation.checkin != null && 
+                        reservation.checkout != null && 
+                        reservation.guests_list.isNotEmpty()) {
+                        
+                        Log.d(TAG, "Reservation successful with confirmation: ${reservation.confirmation_number}")
+                        
+                        // Navigate to confirmation screen
+                        val action = ReservationFragmentDirections
+                            .actionReservationFragmentToConfirmationFragment(reservation)
+                        findNavController().navigate(action)
+                    } else {
+                        // If any required field is missing
+                        Log.e(TAG, "Reservation object is incomplete: $reservation")
+                        binding.submitButton.isEnabled = true
+                        showError("Reservation data is incomplete. Please try again.")
+                    }
                 } else {
                     binding.submitButton.isEnabled = true
                     showError("Failed to create reservation. Please try again.")

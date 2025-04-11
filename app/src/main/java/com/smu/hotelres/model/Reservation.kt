@@ -8,5 +8,5 @@ data class Reservation(
     val hotel_name: String,
     val checkin: Date,
     val checkout: Date,
-    val guests: List<Guest>
+    val guests_list: List<Guest>
 ) : Serializable 

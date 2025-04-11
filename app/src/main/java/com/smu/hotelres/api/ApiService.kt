@@ -3,6 +3,7 @@ package com.smu.hotelres.api
 import com.smu.hotelres.model.Hotel
 import com.smu.hotelres.model.Reservation
 import com.smu.hotelres.model.ReservationRequest
+import com.smu.hotelres.model.ReservationResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -19,5 +20,5 @@ interface ApiService {
     @POST("reservation/")
     suspend fun createReservation(
         @Body request: ReservationRequest
-    ): Response<Reservation>
+    ): Response<ReservationResponse>
 } 

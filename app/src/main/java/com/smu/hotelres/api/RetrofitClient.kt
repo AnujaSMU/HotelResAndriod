@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:8090/" // Using HTTP protocol for Android emulator's localhost
+    private const val BASE_URL = "https://anubismage.pythonanywhere.com/" // Using HTTP protocol for Android emulator's localhost
 
     private val gson = GsonBuilder()
         .setDateFormat("yyyy-MM-dd") // Match Django date format

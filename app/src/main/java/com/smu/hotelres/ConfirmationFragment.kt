@@ -44,10 +44,10 @@ class ConfirmationFragment : Fragment() {
             confirmationNumberTextView.text = "Confirmation: ${reservation.confirmation_number}"
             hotelNameTextView.text = reservation.hotel_name
             datesTextView.text = "Check-in: $checkinFormatted\nCheck-out: $checkoutFormatted"
-            guestsCountTextView.text = "Number of Guests: ${reservation.guests.size}"
+            guestsCountTextView.text = "Number of Guests: ${reservation.guests_list.size}"
 
             // Add all guests
-            for (guest in reservation.guests) {
+            for (guest in reservation.guests_list) {
                 val guestView = layoutInflater.inflate(R.layout.item_guest, binding.guestsContainer, false)
                 guestView.findViewById<TextView>(R.id.guestNameTextView).text = guest.guest_name
                 guestView.findViewById<TextView>(R.id.guestGenderTextView).text = guest.gender
