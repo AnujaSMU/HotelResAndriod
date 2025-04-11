@@ -36,7 +36,8 @@
         android:calendarViewShown="false"
         android:datePickerMode="spinner"
         app:layout_constraintTop_toBottomOf="@id/checkInLabel"
-        tools:layout_editor_absoluteX="16dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/checkOutLabel"
@@ -56,17 +57,21 @@
         android:calendarViewShown="false"
         android:datePickerMode="spinner"
         app:layout_constraintTop_toBottomOf="@id/checkOutLabel"
-        tools:layout_editor_absoluteX="16dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/guestsLayout"
+    <com.smu.hotelres.view.NumberPickerView
+        android:id="@+id/guestsNumberPicker"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="32dp"
+        app:labelText="Number of Guests"
+        app:minValue="1"
+        app:maxValue="10"
+        app:value="1"
         app:layout_constraintTop_toBottomOf="@id/checkOutDatePicker"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-    </com.google.android.material.textfield.TextInputLayout>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/searchButton"
@@ -74,17 +79,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:text="Search Hotels"
-        app:layout_constraintTop_toBottomOf="@+id/guestsEditText"
-        tools:layout_editor_absoluteX="16dp" />
-
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/guestsEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:hint="Number of Guests"
-        android:inputType="number"
-        app:layout_constraintTop_toBottomOf="@+id/checkOutDatePicker"
-        tools:layout_editor_absoluteX="11dp" />
+        app:layout_constraintTop_toBottomOf="@+id/guestsNumberPicker"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

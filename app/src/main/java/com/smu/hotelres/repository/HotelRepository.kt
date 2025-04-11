@@ -131,16 +131,14 @@ class HotelRepository {
 
     // Provide mock data for testing or when API is unavailable
     private fun getMockHotels(): List<Hotel> {
-        val calendar = Calendar.getInstance()
-        calendar.add(Calendar.MONTH, 1)
-        val futureDate = calendar.time
+
         
         return listOf(
-            Hotel(1, "Grand Hotel", 4.5, 199, futureDate, true),
-            Hotel(2, "Seaside Resort", 4.8, 249, futureDate, true),
-            Hotel(3, "Mountain View Inn", 3.7, 179, futureDate, false),
-            Hotel(4, "City Center Hotel", 4.2, 299, futureDate, true),
-            Hotel(5, "Luxury Palace", 4.9, 399, futureDate, true)
+            Hotel(1, "Grand Hotel", 4.5, 199, "2025-04-10", true),
+            Hotel(2, "Seaside Resort", 4.8, 249, "2025-04-10", true),
+            Hotel(3, "Mountain View Inn", 3.7, 179, "2025-04-10", false),
+            Hotel(4, "City Center Hotel", 4.2, 299, "2025-04-10", true),
+            Hotel(5, "Luxury Palace", 4.9, 399, "2025-04-10", true)
         )
     }
 } 

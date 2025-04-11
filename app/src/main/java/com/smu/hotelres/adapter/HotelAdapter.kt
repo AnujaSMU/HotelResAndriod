@@ -1,5 +1,6 @@
 package com.smu.hotelres.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -13,6 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class HotelAdapter(
+
     private val onHotelSelected: (Hotel) -> Unit
 ) : ListAdapter<Hotel, HotelAdapter.HotelViewHolder>(HotelDiffCallback()) {
 
@@ -56,9 +58,20 @@ class HotelAdapter(
                 
                 // Display availability and available until date if available
                 val availabilityText = if (hotel.available) {
-                    hotel.availableUntil?.let { date ->
-                        val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                        "Available until ${dateFormat.format(date)}"
+                    Log.d("HotelAdapter", "Available until date: ${hotel.available_until}")
+                    hotel.available_until?.let { dateString ->
+                        try {
+                            // Parse the date from yyyy-MM-dd format
+                            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val outputFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                            val date = inputFormat.parse(dateString)
+                            date?.let {
+                                "Available until ${outputFormat.format(it)}"
+                            } ?: "Available"
+                        } catch (e: Exception) {
+                            Log.e("HotelAdapter", "Error parsing date: ${e.message}")
+                            "Available"
+                        }
                     } ?: "Available"
                 } else {
                     "Not Available"

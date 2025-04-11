@@ -45,14 +45,16 @@ class SearchFragment : Fragment() {
         binding.searchButton.setOnClickListener {
             val checkInDate = getDateFromDatePicker(binding.checkInDatePicker)
             val checkOutDate = getDateFromDatePicker(binding.checkOutDatePicker)
-            val guests = binding.guestsEditText.text.toString()
-
-            if (guests.isEmpty()) {
-                Toast.makeText(context, "Please enter number of guests", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+            val guests = binding.guestsNumberPicker.getValue().toString()
 
             // Validate dates
+            val currentCalendar = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            
             val checkInCalendar = Calendar.getInstance().apply {
                 time = dateFormat.parse(checkInDate)!!
             }
@@ -60,8 +62,22 @@ class SearchFragment : Fragment() {
                 time = dateFormat.parse(checkOutDate)!!
             }
 
+            // Validate check-in date is not before current date
+            if (checkInCalendar.before(currentCalendar)) {
+                Toast.makeText(context, "Check-in date cannot be before today", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (checkOutCalendar.before(checkInCalendar)) {
                 Toast.makeText(context, "Check-out date must be after check-in date", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            // Validate stay duration is not more than 100 days
+            val diffInMillis = checkOutCalendar.timeInMillis - checkInCalendar.timeInMillis
+            val diffInDays = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
+            if (diffInDays > 100) {
+                Toast.makeText(context, "Bookings cannot exceed 100 days", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

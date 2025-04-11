@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
@@ -61,14 +60,37 @@ class ReservationFragment : Fragment() {
             datesTextView.text = "Check-in: $checkInDate\nCheck-out: $checkOutDate"
             
             // Format the available until date if available
-            val availabilityInfo = hotel.availableUntil?.let { date ->
-                val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                "Available until: ${dateFormat.format(date)}"
+            val availabilityInfo = hotel.available_until?.let { dateString ->
+                try {
+                    // Parse the date from yyyy-MM-dd format
+                    val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val outputFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                    val date = inputFormat.parse(dateString)
+                    date?.let {
+                        "Available until: ${outputFormat.format(it)}"
+                    } ?: ""
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing available_until date: ${e.message}")
+                    ""
+                }
             } ?: ""
             
-            // Calculate total price (price per night * number of guests)
-            val totalPrice = hotel.price * guests
-            priceTextView.text = "Price: $${hotel.price}/night\nTotal Price: $${totalPrice}"
+            // Calculate total price (price per night * number of guests * number of days)
+            val dateFormat = SimpleDateFormat("MM/dd/yyyy", Locale.US)
+            val checkIn = dateFormat.parse(checkInDate)
+            val checkOut = dateFormat.parse(checkOutDate)
+            val diffInMillis = checkOut!!.time - checkIn!!.time //Cannot be Null
+            val diffInDays = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
+            
+            // Validate stay duration is not more than 100 days (as a fallback)
+            if (diffInDays > 100) {
+                Toast.makeText(context, "Bookings cannot exceed 100 days", Toast.LENGTH_SHORT).show()
+                findNavController().popBackStack()
+                return@apply
+            }
+            
+            val totalPrice = hotel.price * guests * diffInDays
+            priceTextView.text = "Price: $${hotel.price}/night\nStay Duration: $diffInDays night(s)\nTotal Price: $${totalPrice}"
             guestsCountTextView.text = "Number of Guests: $guests"
         }
 
@@ -142,11 +164,9 @@ class ReservationFragment : Fragment() {
 
                 if (reservation != null) {
                     // Verify all fields are present in the reservation object
-                    if (reservation.confirmation_number.isNotEmpty() && 
-                        reservation.hotel_name.isNotEmpty() && 
-                        reservation.checkin != null && 
-                        reservation.checkout != null && 
-                        reservation.guests_list.isNotEmpty()) {
+                    if (reservation.confirmation_number.isNotEmpty() &&
+                        reservation.hotel_name.isNotEmpty() && reservation.guests_list.isNotEmpty()
+                    ) {
                         
                         Log.d(TAG, "Reservation successful with confirmation: ${reservation.confirmation_number}")
                         
