@@ -14,9 +14,10 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class HotelAdapter(
-
     private val onHotelSelected: (Hotel) -> Unit
 ) : ListAdapter<Hotel, HotelAdapter.HotelViewHolder>(HotelDiffCallback()) {
+
+    private var selectedPosition = RecyclerView.NO_POSITION
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HotelViewHolder {
         val binding = ItemHotelBinding.inflate(
@@ -28,7 +29,7 @@ class HotelAdapter(
     }
 
     override fun onBindViewHolder(holder: HotelViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), position == selectedPosition)
     }
 
     inner class HotelViewHolder(
@@ -39,12 +40,23 @@ class HotelAdapter(
             binding.root.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onHotelSelected(getItem(position))
+                    val hotel = getItem(position)
+                    
+                    // Update selection state
+                    val previousPosition = selectedPosition
+                    selectedPosition = position
+                    
+                    // Notify adapter of changes to update UI
+                    notifyItemChanged(previousPosition)
+                    notifyItemChanged(selectedPosition)
+                    
+                    // Call the selection callback
+                    onHotelSelected(hotel)
                 }
             }
         }
 
-        fun bind(hotel: Hotel) {
+        fun bind(hotel: Hotel, isSelected: Boolean) {
             binding.apply {
                 // Set hotel name and rating
                 hotelNameTextView.text = hotel.name
@@ -88,7 +100,16 @@ class HotelAdapter(
                 availabilityChip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(chipColor)
                 
                 // Set card selection state
-                root.isSelected = hotel.available
+                root.isChecked = isSelected
+                
+                if (isSelected) {
+                    root.strokeColor = ContextCompat.getColor(root.context, R.color.accent)
+                    root.strokeWidth = root.resources.getDimensionPixelSize(R.dimen.card_stroke_width)
+                    root.cardElevation = root.resources.getDimension(R.dimen.card_selected_elevation)
+                } else {
+                    root.strokeColor = ContextCompat.getColor(root.context, android.R.color.transparent)
+                    root.cardElevation = root.resources.getDimension(R.dimen.card_default_elevation)
+                }
             }
         }
     }

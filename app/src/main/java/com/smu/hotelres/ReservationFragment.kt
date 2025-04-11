@@ -89,7 +89,7 @@ class ReservationFragment : Fragment() {
                 return@apply
             }
             
-            val totalPrice = hotel.price * guests * diffInDays
+            val totalPrice = hotel.price * maxOf(1, guests) * diffInDays
             priceTextView.text = "Price: $${hotel.price}/night\nStay Duration: $diffInDays night(s)\nTotal Price: $${totalPrice}"
             guestsCountTextView.text = "Number of Guests: $guests"
         }

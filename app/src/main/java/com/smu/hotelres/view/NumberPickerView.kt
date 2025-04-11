@@ -95,29 +95,5 @@ class NumberPickerView @JvmOverloads constructor(
     }
     
     fun getValue(): Int = currentValue
-    
-    fun setMinValue(min: Int) {
-        if (min <= maxValue) {
-            minValue = min
-            if (currentValue < minValue) {
-                currentValue = minValue
-            }
-            updateUI()
-        }
-    }
-    
-    fun setMaxValue(max: Int) {
-        if (max >= minValue) {
-            maxValue = max
-            if (currentValue > maxValue) {
-                currentValue = maxValue
-            }
-            updateUI()
-        }
-    }
-    
-    fun setLabel(label: String) {
-        labelText = label
-        updateUI()
-    }
+
 } 

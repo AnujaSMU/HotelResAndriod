@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Card dimensions -->
+    <dimen name="card_default_elevation">4dp</dimen>
+    <dimen name="card_selected_elevation">8dp</dimen>
+    <dimen name="card_stroke_width">2dp</dimen>
+</resources> 
