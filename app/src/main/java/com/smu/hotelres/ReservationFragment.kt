@@ -10,15 +10,18 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.observe
 import androidx.navigation.fragment.findNavController
 import com.smu.hotelres.databinding.FragmentReservationBinding
 import com.smu.hotelres.model.Guest
 import com.smu.hotelres.model.Hotel
+import com.smu.hotelres.model.Reservation
 import com.smu.hotelres.repository.HotelRepository
+import com.smu.hotelres.viewmodel.ReservationViewModel
+import com.smu.hotelres.viewmodel.ReservationViewModelFactory
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class ReservationFragment : Fragment() {
     private val TAG = "ReservationFragment"
@@ -30,6 +33,10 @@ class ReservationFragment : Fragment() {
     private var guests: Int = 0
     private val guestInputs = mutableListOf<Pair<EditText, RadioGroup>>()
     private val repository = HotelRepository()
+
+    private val viewModel: ReservationViewModel by viewModels {
+        ReservationViewModelFactory(repository)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,44 +60,35 @@ class ReservationFragment : Fragment() {
 
         Log.d(TAG, "Got hotel: ${hotel.name}, Check-in: $checkInDate, Check-out: $checkOutDate, Guests: $guests")
 
-        // Display hotel information
+        setupUI()
+        setupObservers()
+    }
+
+    private fun setupUI() {
         binding.apply {
             hotelNameTextView.text = hotel.name
             ratingTextView.text = hotel.rating.toString()
             datesTextView.text = "Check-in: $checkInDate\nCheck-out: $checkOutDate"
             
-            // Format the available until date if available
-            val availabilityInfo = hotel.available_until?.let { dateString ->
-                try {
-                    // Parse the date from yyyy-MM-dd format
-                    val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    val outputFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                    val date = inputFormat.parse(dateString)
-                    date?.let {
-                        "Available until: ${outputFormat.format(it)}"
-                    } ?: ""
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error parsing available_until date: ${e.message}")
-                    ""
-                }
-            } ?: ""
-            
-            // Calculate total price (price per night * number of guests * number of days)
-            val dateFormat = SimpleDateFormat("MM/dd/yyyy", Locale.US)
-            val checkIn = dateFormat.parse(checkInDate)
-            val checkOut = dateFormat.parse(checkOutDate)
-            val diffInMillis = checkOut!!.time - checkIn!!.time //Cannot be Null
-            val diffInDays = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
-            
-            // Validate stay duration is not more than 100 days (as a fallback)
-            if (diffInDays > 100) {
-                Toast.makeText(context, "Bookings cannot exceed 100 days", Toast.LENGTH_SHORT).show()
-                findNavController().popBackStack()
-                return@apply
+            // Format the available until date
+            val availabilityInfo = viewModel.formatAvailabilityDate(hotel.available_until)
+            if (availabilityInfo.isNotEmpty()) {
+                // Add TextView for availability info if not in layout
+                val availabilityTextView = TextView(context)
+                availabilityTextView.text = availabilityInfo
+                binding.root.addView(availabilityTextView)
             }
             
-            val totalPrice = hotel.price * maxOf(1, guests) * diffInDays
-            priceTextView.text = "Price: $${hotel.price}/night\nStay Duration: $diffInDays night(s)\nTotal Price: $${totalPrice}"
+            // Calculate and display total price
+            val priceInfo = viewModel.calculateTotalPrice(hotel, checkInDate, checkOutDate, guests)
+            if (priceInfo.isNotEmpty()) {
+                priceTextView.text = priceInfo
+            } else {
+                Toast.makeText(context, "Invalid booking duration", Toast.LENGTH_SHORT).show()
+                findNavController().popBackStack()
+                return
+            }
+            
             guestsCountTextView.text = "Number of Guests: $guests"
         }
 
@@ -111,90 +109,47 @@ class ReservationFragment : Fragment() {
         }
 
         binding.submitButton.setOnClickListener {
-            if (validateInputs()) {
-                submitReservation()
-            }
+            submitReservation()
         }
     }
 
-    private fun validateInputs(): Boolean {
-        for ((nameEditText, genderRadioGroup) in guestInputs) {
-            if (nameEditText.text.toString().trim().isEmpty()) {
-                Toast.makeText(context, "Please enter all guest names", Toast.LENGTH_SHORT).show()
-                return false
-            }
-            if (genderRadioGroup.checkedRadioButtonId == -1) {
-                Toast.makeText(context, "Please select gender for all guests", Toast.LENGTH_SHORT).show()
-                return false
+    private fun setupObservers() {
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+            binding.submitButton.isEnabled = !isLoading
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             }
         }
-        return true
+
+        viewModel.reservationResult.observe(viewLifecycleOwner) { reservation ->
+            reservation?.let {
+                val action = ReservationFragmentDirections
+                    .actionReservationFragmentToConfirmationFragment(it)
+                findNavController().navigate(action)
+            }
+        }
     }
 
     private fun submitReservation() {
-        // Show loading indicator
-        binding.progressBar.visibility = View.VISIBLE
-        binding.submitButton.isEnabled = false
-
-        // Collect guest information
-        val guestList = guestInputs.map { (nameEditText, genderRadioGroup) ->
-            val name = nameEditText.text.toString()
+        val guestInputsList = guestInputs.map { (nameEditText, genderRadioGroup) ->
+            val name = nameEditText.text.toString().trim()
             val gender = when (genderRadioGroup.checkedRadioButtonId) {
                 R.id.maleRadioButton -> "Male"
                 R.id.femaleRadioButton -> "Female"
                 else -> "Other"
             }
-            Guest(guest_name = name, gender = gender)
+            Pair(name, gender)
         }
 
-        Log.d(TAG, "Submitting reservation with ${guestList.size} guests")
-
-        // Make API call to submit reservation
-        lifecycleScope.launch {
-            try {
-                val reservation = repository.createReservation(
-                    hotel = hotel,
-                    checkinDate = checkInDate,
-                    checkoutDate = checkOutDate,
-                    guests = guestList
-                )
-
-                // Hide loading
-                binding.progressBar.visibility = View.GONE
-
-                if (reservation != null) {
-                    // Verify all fields are present in the reservation object
-                    if (reservation.confirmation_number.isNotEmpty() &&
-                        reservation.hotel_name.isNotEmpty() && reservation.guests_list.isNotEmpty()
-                    ) {
-                        
-                        Log.d(TAG, "Reservation successful with confirmation: ${reservation.confirmation_number}")
-                        
-                        // Navigate to confirmation screen
-                        val action = ReservationFragmentDirections
-                            .actionReservationFragmentToConfirmationFragment(reservation)
-                        findNavController().navigate(action)
-                    } else {
-                        // If any required field is missing
-                        Log.e(TAG, "Reservation object is incomplete: $reservation")
-                        binding.submitButton.isEnabled = true
-                        showError("Reservation data is incomplete. Please try again.")
-                    }
-                } else {
-                    binding.submitButton.isEnabled = true
-                    showError("Failed to create reservation. Please try again.")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error creating reservation: ${e.message}", e)
-                binding.progressBar.visibility = View.GONE
-                binding.submitButton.isEnabled = true
-                showError("Error: ${e.message}")
-            }
+        if (viewModel.validateGuestInputs(guestInputsList)) {
+            viewModel.submitReservation(hotel, checkInDate, checkOutDate, guestInputsList)
+        } else {
+            Toast.makeText(context, "Please enter all guest information", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun showError(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroyView() {

@@ -7,22 +7,27 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.LiveData
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.smu.hotelres.adapter.HotelAdapter
 import com.smu.hotelres.databinding.FragmentHotelListBinding
 import com.smu.hotelres.model.Hotel
 import com.smu.hotelres.repository.HotelRepository
-import kotlinx.coroutines.launch
+import com.smu.hotelres.viewmodel.HotelListViewModel
+import com.smu.hotelres.viewmodel.HotelListViewModelFactory
 
 class HotelListFragment : Fragment() {
     private val TAG = "HotelListFragment"
     private var _binding: FragmentHotelListBinding? = null
     private val binding get() = _binding!!
-    private var selectedHotel: Hotel? = null
     private lateinit var adapter: HotelAdapter
     private val repository = HotelRepository()
+
+    private val viewModel: HotelListViewModel by viewModels<HotelListViewModel> {
+        HotelListViewModelFactory(repository)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,7 +53,7 @@ class HotelListFragment : Fragment() {
 
         // Setup RecyclerView
         adapter = HotelAdapter { hotel ->
-            selectedHotel = hotel
+            viewModel.selectHotel(hotel)
             if (hotel.available) {
                 showContinueButton(true)
             } else {
@@ -68,7 +73,7 @@ class HotelListFragment : Fragment() {
 
         // Setup next button
         binding.nextButton.setOnClickListener {
-            selectedHotel?.let { hotel ->
+            viewModel.selectedHotel.value?.let { hotel ->
                 Log.d(TAG, "Proceeding with hotel: ${hotel.name}, ID: ${hotel.id}")
                 val action = HotelListFragmentDirections
                     .actionHotelListFragmentToReservationFragment(
@@ -81,40 +86,32 @@ class HotelListFragment : Fragment() {
             }
         }
 
-        // Show loading state
-        showLoading(true)
+        // Setup observers
+        setupObservers()
 
-        // Fetch hotels from the API using our repository
-        Log.d(TAG, "Fetching hotels for dates: $checkInDate to $checkOutDate")
-        fetchHotels(checkInDate, checkOutDate)
+        // Fetch hotels
+        viewModel.fetchHotels(checkInDate, checkOutDate)
+    }
+
+    private fun setupObservers() {
+        viewModel.hotels.observe(viewLifecycleOwner) { hotels ->
+            adapter.submitList(hotels)
+            showEmptyState(hotels.isEmpty())
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            showLoading(isLoading)
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let { message ->
+                showError(message)
+            }
+        }
     }
 
     private fun showContinueButton(show: Boolean) {
         binding.nextButton.visibility = if (show) View.VISIBLE else View.GONE
-    }
-
-    private fun fetchHotels(checkInDate: String, checkOutDate: String) {
-        lifecycleScope.launch {
-            try {
-                Log.d(TAG, "Starting API call to fetch hotels")
-                val hotels = repository.getAvailableHotels(checkInDate, checkOutDate)
-                Log.d(TAG, "Received ${hotels.size} hotels from repository")
-                
-                adapter.submitList(hotels)
-                showLoading(false)
-                
-                if (hotels.isEmpty()) {
-                    Log.d(TAG, "No hotels available for selected dates")
-                    showEmptyState(true)
-                } else {
-                    showEmptyState(false)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error fetching hotels: ${e.message}", e)
-                showLoading(false)
-                showError("Failed to load hotels: ${e.message}")
-            }
-        }
     }
 
     private fun showLoading(isLoading: Boolean) {
