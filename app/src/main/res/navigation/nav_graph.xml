@@ -51,6 +51,24 @@
         <argument
             android:name="guests"
             app:argType="integer" />
+        <action
+            android:id="@+id/action_reservationFragment_to_confirmationFragment"
+            app:destination="@id/confirmationFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/confirmationFragment"
+        android:name="com.smu.hotelres.ConfirmationFragment"
+        android:label="Reservation Confirmed"
+        tools:layout="@layout/fragment_confirmation">
+        <argument
+            android:name="reservation"
+            app:argType="com.smu.hotelres.model.Reservation" />
+        <action
+            android:id="@+id/action_confirmationFragment_to_searchFragment"
+            app:destination="@id/searchFragment"
+            app:popUpTo="@id/searchFragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
 </navigation> 

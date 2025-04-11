@@ -7,6 +7,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.smu.hotelres.databinding.ItemHotelBinding
 import com.smu.hotelres.model.Hotel
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class HotelAdapter(
     private val onHotelSelected: (Hotel) -> Unit
@@ -41,9 +43,22 @@ class HotelAdapter(
         fun bind(hotel: Hotel) {
             binding.apply {
                 hotelNameTextView.text = hotel.name
-                priceTextView.text = "$${hotel.price}"
-                availabilityTextView.text = if (hotel.availability) "Available" else "Not Available"
-                root.isSelected = hotel.availability
+                priceTextView.text = "$${hotel.price}/night"
+                ratingTextView.text = hotel.rating.toString()
+                
+                // Display availability and available until date if available
+                val availabilityText = if (hotel.available) {
+                    hotel.availableUntil?.let { date ->
+                        val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                        "Available until ${dateFormat.format(date)}"
+                    } ?: "Available"
+                } else {
+                    "Not Available"
+                }
+                availabilityTextView.text = availabilityText
+                
+                // Set card selection state
+                root.isSelected = hotel.available
             }
         }
     }
